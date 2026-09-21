@@ -5,7 +5,7 @@
 
 const DEFAULT_CONFIG = {
     // Game basics
-    gameMode: 'solo',         // 'solo' | 'pvp' | 'team'
+    gameMode: 'solo',         // 'solo' | 'pvp' | 'timer'
     questionMode: 'flashcard', // 'flashcard' | 'quiz'
 
     // Boss / Distance
@@ -18,13 +18,12 @@ const DEFAULT_CONFIG = {
     bgUrl: '',
     bgOpacity: 0.3,
 
-    // Students (for Team mode & Duckrace)
+    // Students (for Solo mode avatars)
     numStudents: 10,          // load Hero/1.png -> Hero/N.png
-    teamTurnMode: 'duckrace', // 'duckrace' | 'random'
 
     // PvP settings
-    pvpTurnTime: 10,          // seconds per turn (flashcard PvP)
-    pvpFreezeTime: 2,         // seconds frozen after wrong answer
+    pvpTurnTime: 10,         // seconds per turn (flashcard PvP)
+    pvpFreezeTime: 2,        // seconds frozen after wrong answer
     // Default key bindings
     pvpKeys: {
         p1A: 'q', p1B: 'w', p1C: 'e', p1D: 'r',
@@ -32,10 +31,17 @@ const DEFAULT_CONFIG = {
         p2A: 'u', p2B: 'i', p2C: 'o', p2D: 'p',
         p2Speed: '[', p2Skill: ']',
     },
+
+    // Quản trò keys (dùng cho Timer mode: bấm Đúng/Sai)
     teamKeys: {
         correct: 'ArrowRight',
         wrong: 'ArrowLeft',
     },
+
+    // Timer mode settings
+    timerTime: 120,           // tổng thời gian đếm ngược (giây)
+    timerHeroUrl: '',         // link ảnh Hero kiểu Boss (Pinterest/Google), rỗng = placeholder
+    timerSkillMode: 'random', // 'random' | 'buffet'
 
     // Boss rage & Sudden Death (Solo Mode)
     bossRageTime: 15,         // seconds for boss rage bar to fill
@@ -89,6 +95,12 @@ const DEFAULT_CONFIG = {
 
     // Card display
     cardDisplay: 'both',      // 'both' | 'image' | 'text'
+
+    // ⏱️ Timer mode settings
+    timerBossUrl: '',         // link ảnh Boss riêng cho Timer
+    timerHeroUrl: '',         // link ảnh Hero riêng cho Timer (giống Boss)
+    timerTime: 120,           // thời gian đếm ngược (giây)
+    timerSkillMode: 'random', // 'random' | 'buffet'
 };
 
 const MASTER_SKILLS = {

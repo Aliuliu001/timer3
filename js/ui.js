@@ -20,7 +20,7 @@ const UI = {
                 m.style.transform = 'translate(-50%, -50%)';
                 m.style.opacity = '0.9';
                 m.style.zIndex = '5';
-                m.innerHTML = `<img src="./assets/power_up.gif" onerror="this.onerror=null; this.outerHTML='<span style=\\'font-size:30px; filter:drop-shadow(0 0 5px rgba(255,255,255,0.8))\\'>😈</span>';" style="width: 50px; height: 50px; object-fit: contain; filter: drop-shadow(0 0 5px rgba(255,255,255,0.8));">`;
+                m.innerHTML = `<img src="./assets/combo/flame.gif" onerror="this.onerror=null; this.outerHTML='<span style=\\'font-size:30px; filter:drop-shadow(0 0 5px rgba(255,255,255,0.8))\\'>😈</span>';" style="width: 50px; height: 50px; object-fit: contain; filter: drop-shadow(0 0 5px rgba(255,255,255,0.8));">`;
                 arena.appendChild(m);
             });
         });
@@ -279,8 +279,6 @@ const UI = {
         let container = null;
         if (Game.state.mode === 'pvp') {
             container = document.querySelector('.pvp-cards-stack');
-        } else if (Game.state.mode === 'team') {
-            container = document.querySelector('#team-layout .cards-row-h');
         } else {
             container = document.querySelector('#solo-layout .cards-row-h') || document.querySelector('.cards-row-h');
         }
@@ -772,7 +770,7 @@ const UI = {
                 const powerup = document.createElement('img');
                 powerup.className = 'boss-powerup';
                 // try gif first
-                powerup.src = './assets/powerup.gif';
+                powerup.src = './assets/combo/flame.gif';
                 powerup.onerror = () => {
                     // fallback to png
                     powerup.onerror = () => {
@@ -862,20 +860,29 @@ const UI = {
     // ──────────────── BOSS AVATAR ────────────────
     updateBossAvatar() {
         const containers = document.querySelectorAll('.boss-avatar-media');
-        const val = Game.config.bossThemeId || '12582594';
-        const tenorMatch = val.match(/(\d{6,})/);
-        const isNumeric = /^\d+$/.test(val.trim());
+        const val = (Game.config.bossThemeId || '12582594').trim();
+        const isUrl = val.startsWith('http') || val.startsWith('data:');
+        const isVideo = val.endsWith('.mp4') || val.endsWith('.webm');
         let html = '';
-        if (isNumeric || tenorMatch) {
-            const id = isNumeric ? val : tenorMatch[1];
-            html = `<iframe src="https://tenor.com/embed/${id}" width="100%" height="100%" frameborder="0" scrolling="no" class="pointer-events-none" allowtransparency="true"></iframe>`;
+        if (isUrl) {
+            // Link ảnh/video trực tiếp (Pinterest, Google, tenor gif, ...)
+            if (isVideo) {
+                html = `<video src="${val}" autoplay loop muted playsinline class="boss-media-el"></video>`;
+            } else {
+                html = `<img src="${val}" class="boss-media-el" onerror="this.src='https://placehold.co/300x300/1e293b/ef4444?text=BOSS'">`;
+            }
         } else {
-            html = `<img src="${val}" class="w-full h-full object-cover pointer-events-none" onerror="this.src='https://placehold.co/300x300/1e293b/ef4444?text=BOSS'">`;
+            // Chỉ khi là ID thuần (Tenor số) mới dùng iframe
+            const tenorMatch = val.match(/tenor\.com\/embed\/(\d+)/);
+            const id = tenorMatch ? tenorMatch[1] : (/\d{6,}/.test(val) ? val.match(/\d{6,}/)[0] : val);
+            html = `<iframe src="https://tenor.com/embed/${id}" width="100%" height="100%" frameborder="0" scrolling="no" class="pointer-events-none" allowtransparency="true"></iframe>`;
         }
         containers.forEach(c => {
             c.innerHTML = html;
             c.classList.toggle('flipped', !!Game.config.bossFlip);
         });
+        // Debug: báo link Boss đang dùng (để chẩn đoán ảnh không hiện)
+        if (window.Game) window.Game.showTimerDebug('boss avatar set. isUrl=' + isUrl + ' src=' + (isUrl ? val : '(tenor iframe)'));
     },
 
     // ──────────────── LEADERBOARD ────────────────

@@ -90,9 +90,9 @@ const Game = {
         // sdTimePct = % thời gian cuối trận kích hoạt Sudden Death
         // sdMultBase = hệ số nhân tốc độ Boss khi Sudden Death (%)
         const base = {
-            'easy':   { speedMult: 0.7, enrage: 2, evolve: 5,  sdMultBase: 120, sdTimePct: 0.15, rageTime: 25, cap: 1.3, clearMana: false },
-            'normal': { speedMult: 1.0, enrage: 5, evolve: 15, sdMultBase: 150, sdTimePct: 0.20, rageTime: 15, cap: 1.5, clearMana: true },
-            'hard':   { speedMult: 1.3, enrage: 8, evolve: 25, sdMultBase: 180, sdTimePct: 0.25, rageTime: 10, cap: 2.0, clearMana: true }
+            'easy':   { speedMult: 0.6, enrage: 1.5, evolve: 3,  sdMultBase: 110, sdTimePct: 0.10, rageTime: 30, cap: 1.25, clearMana: false },
+            'normal': { speedMult: 0.8, enrage: 2.5, evolve: 6,  sdMultBase: 125, sdTimePct: 0.12, rageTime: 20, cap: 1.35, clearMana: true },
+            'hard':   { speedMult: 1.0, enrage: 4,   evolve: 10, sdMultBase: 140, sdTimePct: 0.15, rageTime: 12, cap: 1.5,  clearMana: true }
         };
         const cfg = base[difficulty] || base['normal'];
 
@@ -100,43 +100,41 @@ const Game = {
         // 30s → ~0.39 | 60s → ~0.60 | 120s → 1.00 | 300s → ~1.43 | 900s → ~1.82
         const timeScale = Math.log2(bossTime / 30 + 1) / Math.log2(120 / 30 + 1);
 
-        // Boss base speed: công thức gốc vẫn đúng
-        const bossBaseSpeed = (120 / bossTime) * cfg.speedMult;
+        // Boss base speed: GIẢM 20% để Boss không chạy quá nhanh
+        // Công thức: Boss mất ~90% thời gian game để chạm Player (nếu không bị đánh)
+        const bossBaseSpeed = (120 / (bossTime * 0.9)) * cfg.speedMult;
 
-        // Enrage/Evolve %: nghịch đảo với timeScale
-        // Game ngắn → ít lần enrage → mỗi lần % cao hơn để Boss vẫn mạnh dần
-        // Game dài → nhiều lần → mỗi lần % nhỏ hơn để tổng không vượt cap
-        const enragePercent = Number((cfg.enrage / timeScale).toFixed(1));
-        const evolvePercent = Number((cfg.evolve / timeScale).toFixed(1));
+        // Enrage/Evolve %: giảm mạnh để tổng không vượt cap
+        // Game dài → scale xuống nhiều hơn
+        const enragePercent = Number((cfg.enrage / Math.pow(timeScale, 1.2)).toFixed(1));
+        const evolvePercent = Number((cfg.evolve / Math.pow(timeScale, 1.2)).toFixed(1));
 
         // ── SUDDEN DEATH ──
-        // Thời gian SD = % cuối trận (ví dụ Easy 15% cuối, Hard 25% cuối)
-        // Tối thiểu 5s, tối đa 60s
-        const sdTime = Math.round(Math.min(60, Math.max(5, bossTime * cfg.sdTimePct)));
+        // Thời gian SD = % cuối trận (giảm xuống để ít áp lực hơn)
+        // Tối thiểu 10s, tối đa 45s
+        const sdTime = Math.round(Math.min(45, Math.max(10, bossTime * cfg.sdTimePct)));
 
-        // SD Multiplier: game ngắn Boss ĐÃ nhanh sẵn → buff nhẹ thôi
-        // game dài Boss chậm → buff mạnh hơn để tạo áp lực
+        // SD Multiplier: giảm buff để không quá áp lực
         // Công thức: lerp từ 105% (game 20s) đến sdMultBase (game 120s+)
-        const sdLerp = Math.min(1, Math.max(0, (bossTime - 20) / 100)); // 0 ở 20s, 1 ở 120s+
+        const sdLerp = Math.min(1, Math.max(0, (bossTime - 20) / 100));
         const sdMult = Math.round(105 + (cfg.sdMultBase - 105) * sdLerp);
 
         // ── RAGE TIME ──
-        // Thời gian fill thanh Rage (Boss tung skill)
-        // Game ngắn → rageTime dài hơn (tương đối) để player có cơ hội
-        // Minimum 8s, scale theo timeScale nhưng có sàn hợp lý
-        const rageTime = Math.max(8, Math.round(cfg.rageTime * Math.max(0.6, timeScale)));
+        // Thời gian fill thanh Rage: scale theo game length
+        // Game dài → rageTime dài hơn để player có thời gian
+        const rageTime = Math.max(10, Math.round(cfg.rageTime * timeScale));
 
-        // Enrage cap: game ngắn cần cap thấp hơn (ít thời gian phản ứng)
-        const cap = Number((1 + (cfg.cap - 1) * timeScale).toFixed(1));
+        // Enrage cap: giảm xuống để Boss không quá nhanh
+        const cap = Number((1 + (cfg.cap - 1) * Math.min(timeScale, 1.2)).toFixed(2));
 
         return {
             bossBaseSpeed: Number(bossBaseSpeed.toFixed(3)),
             bossEnrageSpeedPercent: Math.max(0.5, enragePercent),
-            bossEvolveSpeedPercent: Math.max(1, evolvePercent),
-            suddenDeathRageMult: Math.max(105, Math.min(250, sdMult)),  // Cap tối đa 250%
+            bossEvolveSpeedPercent: Math.max(0.5, evolvePercent),
+            suddenDeathRageMult: Math.max(105, Math.min(200, sdMult)),  // Cap tối đa 200% (giảm từ 250%)
             suddenDeathTime: sdTime,
             bossRageTime: rageTime,
-            enrageSpeedCap: Math.max(1.1, Math.min(2.5, cap)),         // Cap tối đa 2.5x
+            enrageSpeedCap: Math.max(1.1, Math.min(1.8, cap)),         // Cap tối đa 1.8x (giảm từ 2.5x)
             bossEvolutionClearsMana: cfg.clearMana
         };
     },
@@ -217,7 +215,7 @@ const Game = {
     // START GAME
     // ══════════════════════════════════════════
     startGame(mode) {
-        SFX.init();
+        try { SFX.init(); } catch(e) { console.warn('SFX.init failed', e); }
         this.config = Settings.loadConfig();
         this.rawCards = Settings.loadCards();
         Cards.load(this.rawCards);
@@ -226,18 +224,19 @@ const Game = {
         this.state.mode = mode;
         this.state.isRunning = true;
         
-        UI.renderMilestones();
-        this.playBGM();
+        try { UI.renderMilestones(); } catch(e) { console.warn('renderMilestones failed', e); }
+        try { this.playBGM(); } catch(e) { console.warn('playBGM failed', e); }
 
         // Show correct game layout
         document.getElementById('mode-select-screen').classList.add('hidden');
         document.getElementById('game-container').classList.remove('hidden');
         document.getElementById('solo-layout').classList.toggle('hidden', mode !== 'solo');
         document.getElementById('pvp-layout').classList.toggle('hidden',  mode !== 'pvp');
-        document.getElementById('team-layout').classList.toggle('hidden', mode !== 'team');
+        document.getElementById('timer-layout').classList.toggle('hidden', mode !== 'timer');
         
-        document.getElementById('tick-cross-overlay')?.classList.toggle('hidden', 
-            !(this.config.tickCrossEnabled && this.config.questionMode === 'flashcard'));
+        // Tick/Cross overlay: hiện trong Timer (luôn) hoặc khi bật cài đặt ở flashcard
+        const showTickCross = (mode === 'timer') || (this.config.tickCrossEnabled && this.config.questionMode === 'flashcard');
+        document.getElementById('tick-cross-overlay')?.classList.toggle('hidden', !showTickCross);
 
         document.getElementById('btn-stop').classList.remove('hidden');
         document.getElementById('btn-pause').classList.remove('hidden');
@@ -253,21 +252,37 @@ const Game = {
             });
         }
 
+        // ⚠️ Toàn bộ UI init bọc trong try/catch riêng biệt:
+        // nếu 1 hàm lỗi (vd: ảnh Pinterest CSP, Audio...) thì các bước sau + startTimer vẫn chạy.
+        try {
         UI.updateBossAvatar();
-        UI.updateHeroAvatar(this.config.heroAvatarId || 1, 'solo');
-        UI.updateBossTrack();
-        UI.updateMana();
-        UI.updateMana('p1');
-        UI.updateMana('p2');
-        UI.updateCombo();
-        UI.updateSkillsUI('solo');
-        UI.updateSkillsUI('p1');
-        UI.updateSkillsUI('p2');
-        UI.renderCards();
+        if (mode === 'timer') {
+            // Timer mode: chỉ cập nhật những gì cần, không gọi UI Solo/PvP
+            this.updateTimerHeroAvatar();
+            UI.updateMana();
+        } else {
+            UI.updateHeroAvatar(this.config.heroAvatarId || 1, 'solo');
+            UI.updateBossTrack();
+            UI.updateMana();
+            UI.updateMana('p1');
+            UI.updateMana('p2');
+            UI.updateCombo();
+            UI.updateSkillsUI('solo');
+            UI.updateSkillsUI('p1');
+            UI.updateSkillsUI('p2');
+            UI.renderCards();
+        }
+        } catch(e) { console.warn('UI init failed (non-fatal):', e); }
 
-        if (mode === 'solo') this.startSolo();
-        else if (mode === 'pvp') this.startPvP();
-        else if (mode === 'team') this.startTeam();
+        try {
+            if (mode === 'solo') this.startSolo();
+            else if (mode === 'pvp') this.startPvP();
+            else if (mode === 'timer') this.startTimer();
+        } catch(e) {
+            console.error('start mode error:', e);
+            const box=document.getElementById('global-error');
+            if(box){ box.classList.remove('hidden'); box.textContent='🐞 Lỗi khởi tạo ('+mode+'): '+(e&&e.message||e)+'\n'+(e&&e.stack?e.stack.split('\n').slice(0,3).join('\n'):''); }
+        }
     },
 
     // ══════════════════════════════════════════
@@ -277,6 +292,125 @@ const Game = {
         Cards.reset('mode2');
         this.refillBoard('mode2', 'solo');
         this.startTimers('solo');
+    },
+
+    startTimer() {
+        // Timer mode: Boss tự tiến từ trái sang phải, quản trò bấm Đúng/Sai để cộng mana.
+        // Thắng khi hết giờ mà Boss chưa chạm Hero. Thua khi Boss chạm Hero.
+        // BULLETPROOF: tạo interval trước, init sau (nếu init lỗi thì đồng hồ vẫn chạy).
+        this.showTimerDebug('startTimer called');
+
+        // ── Tạo interval TRƯỚC (quan trọng: dù init lỗi, đồng hồ vẫn chạy) ──
+        this.state.gameTimerInterval = setInterval(() => {
+            if (!this.state.isRunning || this.state.isPaused || this.state.isGameOver) return;
+            this.state.timeRemaining--;
+            this.updateTimerClock();
+            if (this.state.timeRemaining <= 0) {
+                this.endGame('win');
+            }
+        }, 1000);
+
+        this.state.bossMovementInterval = setInterval(() => {
+            if (!this.state.isRunning || this.state.isPaused || this.state.isGameOver) return;
+            const boss = this.state.boss;
+            if (boss.frozen || boss.paralyzed || boss.sleeping) return;
+            let speed = (this.config.bossBaseSpeed || 1) * boss.speedMult;
+            if (boss.slowed > 0) speed *= (1 - boss.slowed);
+            boss.position -= speed * 0.1;
+            if (boss.position <= 0) {
+                boss.position = 0;
+                this.updateTimerBossBar();
+                this.endGame('lose');
+                return;
+            }
+            if (boss.position > boss.maxPosition) boss.position = boss.maxPosition;
+            this.updateTimerBossBar();
+        }, 100);
+
+        // ── Init state (bọc riêng, lỗi không làm chết interval) ──
+        try {
+            // Clock PHẢI dùng bossTime (thời gian tổng của game)
+            this.state.timeRemaining = this.config.bossTime || 120;
+            this.state.boss.position = this.state.boss.maxPosition;
+            this.state.boss.speedMult = 1.0;
+            this.state.boss.frozen = false;
+            this.state.boss.paralyzed = false;
+            this.state.boss.sleeping = false;
+            this.state.boss.slowed = 0;
+            this.state.boss.blind = false;
+            this.state.boss.scaleLevel = 0;
+            this.state.mana = 0;
+            UI.updateMana();
+        } catch(e) { this.showTimerDebug('init err: ' + e.message); }
+
+        // ── Avatars (bọc riêng) ──
+        try { this.setTimerBossAvatar(); } catch(e) { this.showTimerDebug('bossAvatar err: ' + e.message); }
+        try { this.updateTimerHeroAvatar(); } catch(e) { this.showTimerDebug('heroAvatar err: ' + e.message); }
+        try { this.updateTimerClock(); } catch(e) {}
+        try { this.updateTimerBossBar(); } catch(e) {}
+
+        this.showTimerDebug('startTimer done. timeRemaining=' + this.state.timeRemaining + ' bossMax=' + this.state.boss.maxPosition);
+    },
+
+    showTimerDebug(msg) {
+        // Chỉ hiện khi có lỗi thực sự (để chẩn đoán), không log mỗi tick
+        if (!/err|NOT FOUND|fail|THREW/i.test(msg)) return;
+        const el = document.getElementById('timer-debug');
+        if (!el) return;
+        el.classList.remove('hidden');
+        const t = new Date().toLocaleTimeString();
+        el.textContent = `[${t}] ${msg}\n` + (el.textContent || '').split('\n').slice(0, 8).join('\n');
+    },
+
+    updateTimerClock() {
+        const el = document.getElementById('timer-clock');
+        if (!el) return;
+        const t = Math.max(0, this.state.timeRemaining);
+        const m = String(Math.floor(t / 60)).padStart(2, '0');
+        const s = String(t % 60).padStart(2, '0');
+        el.textContent = `${m}:${s}`;
+    },
+
+    updateTimerBossBar() {
+        const el = document.getElementById('timer-boss-bar');
+        if (!el) return;
+        const pct = Math.max(0, Math.min(100, (this.state.boss.position / this.state.boss.maxPosition) * 100));
+        el.style.width = pct + '%';
+    },
+
+    updateTimerHeroAvatar() {
+        const el = document.querySelector('#timer-hero-box .timer-hero-media');
+        if (!el) { this.showTimerDebug('timer-hero-media NOT FOUND'); return; }
+        const url = this.config.timerHeroUrl || 'assets/timer-boss.gif';
+        this.showTimerDebug('hero url = ' + (url || '(rỗng→dùng mặc định)'));
+        if (url && (url.startsWith('http') || url.startsWith('data:') || url.startsWith('assets/'))) {
+            const isVideo = url.endsWith('.mp4') || url.endsWith('.webm');
+            el.innerHTML = isVideo
+                ? `<video src="${url}" autoplay loop muted playsinline class="boss-media-el"></video>`
+                : `<img src="${url}" class="boss-media-el" onerror="this.src='assets/timer-boss.gif'">`;
+        } else {
+            el.innerHTML = `<img src="assets/timer-boss.gif" class="boss-media-el">`;
+        }
+    },
+
+    // Boss Timer dùng hàm RIÊNG (không dùng chung updateBossAvatar để tránh lộn ảnh vào góc)
+    setTimerBossAvatar() {
+        const el = document.querySelector('#timer-boss-box .boss-avatar-media');
+        if (!el) { this.showTimerDebug('timer-boss-media NOT FOUND'); return; }
+        // Ưu tiên: link Timer riêng → link Boss chung → ảnh mặc định trong repo (luôn hiện được)
+        const url = this.config.timerBossUrl || this.config.bossThemeId || 'assets/timer-boss.gif';
+        this.showTimerDebug('boss timer url = ' + (url || '(rỗng→dùng mặc định)'));
+        if (url && (url.startsWith('http') || url.startsWith('data:') || url.startsWith('assets/'))) {
+            const isVideo = url.endsWith('.mp4') || url.endsWith('.webm');
+            el.innerHTML = isVideo
+                ? `<video src="${url}" autoplay loop muted playsinline class="boss-media-el"></video>`
+                : `<img src="${url}" class="boss-media-el" onerror="this.src='assets/timer-boss.gif'">`;
+        } else if (/^\d+$/.test(url || '')) {
+            // ID số → dùng iframe tenor (giữ tương thích cũ)
+            el.innerHTML = `<iframe src="https://tenor.com/embed/${url}" width="100%" height="100%" frameborder="0" scrolling="no" class="boss-media-el pointer-events-none" allowtransparency="true"></iframe>`;
+        } else {
+            el.innerHTML = `<img src="assets/timer-boss.gif" class="boss-media-el">`;
+        }
     },
 
     startTimers(player) {
@@ -661,56 +795,6 @@ const Game = {
     },
 
     // ══════════════════════════════════════════
-    // TEAM MODE
-    // ══════════════════════════════════════════
-    startTeam() {
-        const order = Duckrace.result.length ? [...Duckrace.result] : [];
-        if (!order.length || this.config.teamTurnMode === 'random') {
-            // Random order
-            for (let i = 1; i <= this.config.numStudents; i++) order.push(i);
-            for (let i = order.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i+1));
-                [order[i], order[j]] = [order[j], order[i]];
-            }
-        }
-        this.state.team.studentOrder = order;
-        this.state.team.currentIdx = 0;
-
-        Cards.reset('mode2');
-        Cards.fillBoard('mode2', () => UI.renderCards());
-        this.startTimers('solo');
-        this.nextTeamTurn();
-    },
-
-    nextTeamTurn() {
-        const team = this.state.team;
-        if (team.currentIdx >= team.studentOrder.length) {
-            team.currentIdx = 0; // Loop back
-        }
-        const studentId = team.studentOrder[team.currentIdx];
-        team.currentIdx++;
-
-        UI.updateHeroAvatar(studentId, 'solo');
-        Fx.spawnFloatText('hero-fx', `⭐ Hero #${studentId}`, '#F59E0B');
-        team.awaitingAnswer = true;
-    },
-
-    handleTeamAnswer(correct) {
-        if (!this.state.team.awaitingAnswer) return;
-        if (this.state.teamHero.paralyzed || this.state.teamHero.frozen || this.state.teamHero.sleeping) return;
-        this.state.team.awaitingAnswer = false;
-        Speech.stopListening();
-
-        if (correct) {
-            this.handleCardCorrect(0, 'solo'); // answer first active card
-        } else {
-            this.handleCardWrong(0, 'solo');
-        }
-
-        setTimeout(() => this.nextTeamTurn(), 500);
-    },
-
-    // ══════════════════════════════════════════
     // CARD ANSWERS (Solo & Team)
     // ══════════════════════════════════════════
     handleCardCorrect(slotIndex, player) {
@@ -801,17 +885,28 @@ const Game = {
 
     handleManualTick(isCorrect) {
         if (!this.state.isRunning || this.state.isGameOver) return;
-        if (this.config.questionMode !== 'flashcard') return; // only for flashcard
-        
+
         // Flash animation
         const flashClass = isCorrect ? 'flash-correct' : 'flash-wrong';
         document.body.classList.add(flashClass);
         setTimeout(() => document.body.classList.remove(flashClass), 300);
 
+        if (this.state.mode === 'timer') {
+            // Timer mode: chỉ quản trò bấm Đúng/Sai -> cộng mana (tối đa 10)
+            if (isCorrect) {
+                this.state.mana = Math.min(10, this.state.mana + 1);
+                Fx.spawnFloatText('timer-hero-fx', '+1 ⚡', '#F6C90E');
+            } else {
+                this.state.combo = 0; // reset chuỗi khi sai
+            }
+            UI.updateMana();
+            return;
+        }
+
+        if (this.config.questionMode !== 'flashcard') return; // only for flashcard
+
         if (this.state.mode === 'pvp') {
             this.handlePvPAnswer(this.state.pvpTurn, 0, isCorrect);
-        } else if (this.state.mode === 'team') {
-            this.handleTeamAnswer(isCorrect);
         } else {
             if (isCorrect) this.handleCardCorrect(0, 'solo');
             else this.handleCardWrong(0, 'solo');
@@ -1202,6 +1297,7 @@ const Game = {
         const setChecked = (id, val) => { const el = document.getElementById(id); if(el) el.checked = !!val; };
 
         set('cfg-boss-time', cfg.bossTime);
+        set('cfg-boss-arrival-time', cfg.bossTime); // Sync Boss Arrival Time input
         set('cfg-flashcard-count', cfg.flashcardCount || 3);
         set('cfg-num-students', cfg.numStudents);
         set('cfg-question-mode', cfg.questionMode);
@@ -1227,6 +1323,10 @@ const Game = {
         set('cfg-p2-avatar', cfg.p2AvatarUrl || '');
         set('cfg-p1-hero-id', cfg.p1HeroId || '1');
         set('cfg-p2-hero-id', cfg.p2HeroId || '2');
+        set('cfg-timer-boss-url', cfg.timerBossUrl || '');
+        set('cfg-timer-hero-url', cfg.timerHeroUrl || '');
+        set('cfg-timer-time', cfg.timerTime || 120);
+        set('cfg-timer-skill-mode', cfg.timerSkillMode || 'random');
         if (cfg.p1AvatarType === 'url') {
             const el = document.getElementById('cfg-p1-type-url');
             if (el) el.checked = true;
@@ -1248,7 +1348,6 @@ const Game = {
         if (prev1) prev1.src = `Hero/${cfg.p1HeroId || '1'}.png`;
         const prev2 = document.getElementById('p2-hero-preview');
         if (prev2) prev2.src = `Hero/${cfg.p2HeroId || '2'}.png`;
-        set('cfg-team-turn-mode', cfg.teamTurnMode);
         set('cfg-shadow-clone-hits', cfg.shadowCloneHits);
         
         set('cfg-bg-url', cfg.bgUrl || '');
@@ -1365,10 +1464,15 @@ const Game = {
         const p2UrlRadio = document.getElementById('cfg-p2-type-url');
         cfg.p2AvatarType       = (p2UrlRadio && p2UrlRadio.checked) ? 'url' : 'hero';
         cfg.flashAvatar        = document.getElementById('cfg-flash-avatar')?.checked || false;
-        cfg.teamTurnMode       = get('cfg-team-turn-mode', 'duckrace');
         
         cfg.bgUrl              = get('cfg-bg-url', '');
         cfg.bgOpacity          = getNum('cfg-bg-opacity', 0.3);
+
+        // ⏱️ Timer mode settings
+        cfg.timerBossUrl       = get('cfg-timer-boss-url', '');
+        cfg.timerHeroUrl       = get('cfg-timer-hero-url', '');
+        cfg.timerTime          = getInt('cfg-timer-time', 120);
+        cfg.timerSkillMode     = get('cfg-timer-skill-mode', 'random');
 
         // Skills
         Object.keys(MASTER_SKILLS).forEach(id => {
@@ -1576,14 +1680,7 @@ const Game = {
         // Mode select buttons
         document.getElementById('mode-card-solo')?.addEventListener('click', () => this.startGame('solo'));
         document.getElementById('mode-card-pvp')?.addEventListener('click',  () => this.startGame('pvp'));
-        document.getElementById('mode-card-team')?.addEventListener('click', () => {
-            // For team mode: run Duckrace first if config says so
-            if (this.config.teamTurnMode === 'duckrace') {
-                this.showDuckrace();
-            } else {
-                this.startGame('team');
-            }
-        });
+        document.getElementById('mode-card-timer')?.addEventListener('click', () => this.startGame('timer'));
 
         // Settings
         document.getElementById('btn-open-settings')?.addEventListener('click', () => this.openSettings());
@@ -1689,6 +1786,16 @@ const Game = {
 
         document.getElementById('cfg-boss-time')?.addEventListener('change', (e) => {
             // When boss time changes, recommend them to click a preset if they want auto recalculate
+        });
+
+        // Sync Boss Arrival Time input with bossTime config
+        document.getElementById('cfg-boss-arrival-time')?.addEventListener('change', (e) => {
+            const newTime = parseInt(e.target.value) || 120;
+            this.config.bossTime = newTime;
+            // Also sync the hidden cfg-boss-time input
+            const bossTimeInput = document.getElementById('cfg-boss-time');
+            if(bossTimeInput) bossTimeInput.value = newTime;
+            this.saveConfig();
         });
 
         document.getElementById('btn-toggle-grid')?.addEventListener('click', () => {
@@ -1904,27 +2011,6 @@ const Game = {
             });
         });
 
-        // Duckrace
-        document.getElementById('btn-duckrace-start')?.addEventListener('click', () => {
-            Duckrace.init(this.config.numStudents);
-            Duckrace.start();
-        });
-        document.getElementById('btn-duckrace-skip')?.addEventListener('click', () => Duckrace.skipToResult());
-        document.getElementById('btn-duckrace-play')?.addEventListener('click', () => {
-            document.getElementById('duckrace-screen').classList.add('hidden');
-            this.startGame('team');
-        });
-        document.getElementById('btn-duckrace-skip-to-game')?.addEventListener('click', () => {
-            Duckrace.skipToResult();
-            setTimeout(() => {
-                document.getElementById('duckrace-screen').classList.add('hidden');
-                this.startGame('team');
-            }, 500);
-        });
-
-        // Team mode answer buttons
-        document.getElementById('btn-team-correct')?.addEventListener('click', () => this.handleTeamAnswer(true));
-        document.getElementById('btn-team-wrong')?.addEventListener('click',   () => this.handleTeamAnswer(false));
         const handleMicClick = () => {
             if (Speech.isListening) {
                 Speech.stopListening();
@@ -1932,14 +2018,6 @@ const Game = {
                 Speech.startListening(
                     (transcript) => {
                         const tr = transcript.toLowerCase();
-                        // Team mode: yes / no
-                        if (this.state.mode === 'team') {
-                            const yes = ['đúng','yes','correct','right','có','okay','ok'];
-                            const no  = ['sai','no','wrong','không','nope'];
-                            if (yes.some(w => tr.includes(w))) this.handleTeamAnswer(true);
-                            else if (no.some(w => tr.includes(w))) this.handleTeamAnswer(false);
-                            return;
-                        }
 
                         // Solo & PvP mode
                         let slot = -1;
@@ -1986,14 +2064,14 @@ const Game = {
         document.getElementById('btn-mic')?.addEventListener('click', handleMicClick);
         document.getElementById('btn-mic-global')?.addEventListener('click', handleMicClick);
 
-        // Team keyboard
-        const handleTeamKey = (e) => {
-            if (!this.state.isRunning || this.state.mode !== 'team' || this.state.isGameOver) return;
+        // Quản trò keyboard (dùng cho Timer mode): bấm Đúng/Sai
+        const handleModKey = (e) => {
+            if (!this.state.isRunning || this.state.mode !== 'timer' || this.state.isGameOver) return;
             const keys = this.config.teamKeys || DEFAULT_CONFIG.teamKeys;
-            if (e.key === keys.correct) this.handleTeamAnswer(true);
-            else if (e.key === keys.wrong) this.handleTeamAnswer(false);
+            if (e.key === keys.correct) this.handleManualTick(true);
+            else if (e.key === keys.wrong) this.handleManualTick(false);
         };
-        document.addEventListener('keydown', handleTeamKey);
+        document.addEventListener('keydown', handleModKey);
 
         // Boss avatar preview
         document.getElementById('cfg-boss-theme')?.addEventListener('input', () => {
@@ -2035,12 +2113,6 @@ const Game = {
         });
     },
 
-    showDuckrace() {
-        Duckrace.init(this.config.numStudents);
-        document.getElementById('mode-select-screen').classList.add('hidden');
-        document.getElementById('duckrace-screen').classList.remove('hidden');
-        Duckrace.render();
-    },
 
     refillBoard(modeString, playerContext) {
         if (this.config.questionMode === 'quiz') {
