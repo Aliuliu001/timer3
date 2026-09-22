@@ -232,7 +232,7 @@
   #arena .bg-layer{position:absolute; inset:0; background-image:url("assets/bg/jungle.jpg"); background-size:cover; background-position:center}
   #arena .ground{position:absolute; left:0; right:0; bottom:0; height:26px; background:rgba(0,0,0,.45)}
   .fighter{position:absolute; bottom:26px; text-align:center; transition:left .2s linear; overflow:visible}
-  .fighter.mirrored{transform:scaleX(-1)}
+  .mirrored{transform:scaleX(-1) !important}
   .fighter img{width:200px; height:200px; object-fit:contain; display:block; margin:0 auto; filter:drop-shadow(0 6px 8px rgba(0,0,0,.5)); animation:bounce 1.2s ease-in-out infinite}
   @keyframes bounce{50%{transform:translateY(-10px)}}
   #boss{left:12px}
@@ -1570,8 +1570,10 @@ function startArena(){
   $('boss-img').src=bossSrc; $('hero-img').src=heroSrc;
   applySizes();
   $('boss').classList.toggle('mirrored', flipBoss);
+  $('boss-face').classList.toggle('mirrored', flipBoss);
   $('boss').classList.toggle('rmwhite', rmWhiteBoss);
   $('hero').classList.toggle('mirrored', flipHero);
+  $('hero-face').classList.toggle('mirrored', flipHero);
   $('boss-face').src=bossSrc; $('hero-face').src=heroSrc;
   // Reset state
   totalGameTimeMs = totalTimeMs;
@@ -2203,8 +2205,10 @@ function startChampion(){
   $('boss-img').src=bossSrc; $('hero-img').src=heroSrc;
   applySizes();
   $('boss').classList.toggle('mirrored', flipBoss);
+  $('boss-face').classList.toggle('mirrored', flipBoss);
   $('boss').classList.toggle('rmwhite', rmWhiteBoss);
   $('hero').classList.toggle('mirrored', flipHero);
+  $('hero-face').classList.toggle('mirrored', flipHero);
   $('boss-face').src=bossSrc; $('hero-face').src=heroSrc;
   // Champion countdown: read from champ-input-m/s (not Timer's input-h/m/s)
   let champM = parseInt($('champ-input-m')?$('champ-input-m').value:5);
@@ -3017,7 +3021,7 @@ function renderGallery(){
     const d=document.createElement('div');
     d.className='pick'+(selBoss===c.src?' sel':'');
     d.style.position='relative';
-    d.innerHTML='<img src="'+c.src+'" alt="'+c.name+'"><div style="font-size:11px;text-align:center">'+c.name+'</div><div class="tick">✓</div>'
+    d.innerHTML='<img class="'+(flipBoss?'mirrored':'')+'" src="'+c.src+'" alt="'+c.name+'"><div style="font-size:11px;text-align:center">'+c.name+'</div><div class="tick">✓</div>'
       +'<button title="Delete this Boss" style="position:absolute;top:2px;right:2px;width:26px;height:26px;border-radius:50%;border:none;background:#c0392b;color:#fff;font-size:14px;cursor:pointer">✕</button>';
     d.onclick=()=>{ selBoss=c.src; $('boss-url').value=''; rememberSetup(); renderGallery(); applySizes(); };
     const delB=d.querySelector('button');
@@ -3029,7 +3033,7 @@ function renderGallery(){
     const d=document.createElement('div');
     d.className='pick'+(selHero===c.src?' sel':'');
     d.style.position='relative';
-    d.innerHTML='<img src="'+c.src+'" alt="'+c.name+'"><div style="font-size:11px;text-align:center">'+c.name+'</div><div class="tick">✓</div>'
+    d.innerHTML='<img class="'+(flipHero?'mirrored':'')+'" src="'+c.src+'" alt="'+c.name+'"><div style="font-size:11px;text-align:center">'+c.name+'</div><div class="tick">✓</div>'
       +'<button title="Delete this Player" style="position:absolute;top:2px;right:2px;width:26px;height:26px;border-radius:50%;border:none;background:#c0392b;color:#fff;font-size:14px;cursor:pointer">✕</button>';
     d.onclick=()=>{ selHero=c.src; $('hero-url').value=''; rememberSetup(); renderGallery(); };
     const delH=d.querySelector('button');
@@ -3128,6 +3132,7 @@ function toggleFlip(who){
   if(who==='boss'){ flipBoss=!flipBoss; $('boss-flip-state').textContent='State: '+(flipBoss?'on (faces right)':'off (faces left)'); $('boss').classList.toggle('mirrored', flipBoss); }
   else { flipHero=!flipHero; $('hero-flip-state').textContent='State: '+(flipHero?'on':'off'); $('hero').classList.toggle('mirrored', flipHero); }
   rememberSetup();
+  renderGallery();
 }
 // First paint: restore remembered choices into the setup controls.
 (function restoreSetup(){
