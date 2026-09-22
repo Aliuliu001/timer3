@@ -232,6 +232,7 @@
   #arena .bg-layer{position:absolute; inset:0; background-image:url("assets/bg/jungle.jpg"); background-size:cover; background-position:center}
   #arena .ground{position:absolute; left:0; right:0; bottom:0; height:26px; background:rgba(0,0,0,.45)}
   .fighter{position:absolute; bottom:26px; text-align:center; transition:left .2s linear; overflow:visible}
+  .fighter.mirrored{transform:scaleX(-1)}
   .fighter img{width:200px; height:200px; object-fit:contain; display:block; margin:0 auto; filter:drop-shadow(0 6px 8px rgba(0,0,0,.5)); animation:bounce 1.2s ease-in-out infinite}
   @keyframes bounce{50%{transform:translateY(-10px)}}
   #boss{left:12px}
@@ -768,7 +769,7 @@
     <div style="display:flex; gap:20px; flex-wrap:wrap; align-items:flex-end">
       <div>
         <label style="display:block; font-size:12px; color:#666; margin-bottom:4px">Cards per round</label>
-        <input type="number" id="champ-num" value="3" min="2" max="7" style="width:60px; padding:6px; border:1px solid #ccc; border-radius:4px" onchange="champSaveSettings()">
+        <input type="number" id="champ-num" value="3" min="1" max="7" style="width:60px; padding:6px; border:1px solid #ccc; border-radius:4px" onchange="champSaveSettings()">
       </div>
       <div>
         <label style="display:block; font-size:12px; color:#666; margin-bottom:4px">Show</label>
@@ -1999,7 +2000,7 @@ const CHAMP_WALK_MS = 240000; // Boss crosses the arena in ~4 min if unfed
 function champEsc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function champSettings(){
   return {
-    cards: Math.min(7, Math.max(2, parseInt($('champ-num')?$('champ-num').value:3)||3)),
+    cards: Math.min(7, Math.max(1, parseInt($('champ-num')?$('champ-num').value:3)||3)),
     show: ($('champ-show')?$('champ-show').value:'both'),
     order: ($('champ-order')?$('champ-order').value:'random'),
     examPct: Math.min(100, Math.max(1, parseInt($('champ-exam-pct')?$('champ-exam-pct').value:85)||85))
