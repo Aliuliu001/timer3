@@ -1386,9 +1386,9 @@ const MAX_GROW=2.0, MAX_FAST_MS=10000; // balance caps: max 200% size, max 10s s
 // wrongPenalty/eatPenalty in SECONDS for clarity. Higher ratio = easier.
 const DIFFICULTY_PRESETS = {
   easy:   {bossArrivalRatio:1.5,  wrongPenalty:2, rageMult:1.2, ragePct:30, price:4, freeze:5, combo:5},
-  normal: {bossArrivalRatio:1.0,  wrongPenalty:2, rageMult:1.5, ragePct:50, price:5, freeze:4, combo:5},
-  hard:   {bossArrivalRatio:0.75, wrongPenalty:3, rageMult:1.8, ragePct:50, price:6, freeze:3, combo:5},
-  expert: {bossArrivalRatio:0.5,  wrongPenalty:3, rageMult:2.0, ragePct:50, price:7, freeze:2, combo:5}
+  normal: {bossArrivalRatio:1.0,  wrongPenalty:2, rageMult:1.3, ragePct:50, price:5, freeze:4, combo:5},
+  hard:   {bossArrivalRatio:0.75, wrongPenalty:3, rageMult:1.4, ragePct:50, price:6, freeze:3, combo:5},
+  expert: {bossArrivalRatio:0.5,  wrongPenalty:3, rageMult:1.5, ragePct:50, price:7, freeze:2, combo:5}
 };
 let difficulty = localStorage.getItem('timer_difficulty') || 'normal';
 function applyDifficulty(level){
@@ -1614,7 +1614,7 @@ function showEnrageWarning() {
   if (AUDIO.sfxOn) {
     try {
       let a = new Audio('sounds/roar.mp3');
-      a.volume = 0.8;
+      a.volume = 1.0;
       a.play().catch(()=>{});
     } catch(e) {}
   }
@@ -1682,14 +1682,14 @@ function getEnrageSpeed(baseSpeed) {
       setTimeout(() => { if(arena) arena.style.boxShadow = ''; }, 800);
     }
     
-    // Periodic roar every 8 seconds
+    // Periodic roar every 10 seconds
     if (window.enrageRoarInterval) clearInterval(window.enrageRoarInterval);
     window.enrageRoarInterval = setInterval(() => {
       if (!isRunning || !isEnraged) return;
       if (AUDIO.sfxOn) {
         try { let a = new Audio('sounds/roar.mp3'); a.volume = 0.5; a.play().catch(()=>{}); } catch(e){}
       }
-    }, 8000);
+    }, 10000);
   }
   const preset = DIFFICULTY_PRESETS[difficulty];
   return isEnraged ? baseSpeed * (preset ? (preset.rageMult || 1.5) : 1.5) : baseSpeed;
