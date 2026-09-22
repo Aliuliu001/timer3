@@ -930,8 +930,8 @@
     <div class="bg-layer" id="bg-layer"></div>
     <div class="ground"></div>
     <div id="clock-display">00:02:00</div>
-    <div class="fighter" id="boss"><img id="boss-img" alt="Boss"></div>
-    <div class="fighter" id="hero"><img id="hero-img" alt="Hero"></div>
+    <div class="fighter" id="boss"><div class="flipper" id="boss-flipper" style="width:100%;height:100%"><img id="boss-img" alt="Boss"></div></div>
+    <div class="fighter" id="hero"><div class="flipper" id="hero-flipper" style="width:100%;height:100%"><img id="hero-img" alt="Hero"></div></div>
     <div id="projectile" class="hidden">🍔</div>
     <div id="beam" class="hidden"></div>
     <div id="flash"></div>
@@ -1569,10 +1569,10 @@ function startArena(){
   localStorage.setItem('timer_rmwhite', rmWhiteBoss?'1':'0');
   $('boss-img').src=bossSrc; $('hero-img').src=heroSrc;
   applySizes();
-  $('boss').classList.toggle('mirrored', flipBoss);
+  if($('boss-flipper')) $('boss-flipper').classList.toggle('mirrored', flipBoss);
   $('boss-face').classList.toggle('mirrored', flipBoss);
   $('boss').classList.toggle('rmwhite', rmWhiteBoss);
-  $('hero').classList.toggle('mirrored', flipHero);
+  if($('hero-flipper')) $('hero-flipper').classList.toggle('mirrored', flipHero);
   $('hero-face').classList.toggle('mirrored', flipHero);
   $('boss-face').src=bossSrc; $('hero-face').src=heroSrc;
   // Reset state
@@ -2204,10 +2204,10 @@ function startChampion(){
   localStorage.setItem('timer_rmwhite', rmWhiteBoss?'1':'0');
   $('boss-img').src=bossSrc; $('hero-img').src=heroSrc;
   applySizes();
-  $('boss').classList.toggle('mirrored', flipBoss);
+  if($('boss-flipper')) $('boss-flipper').classList.toggle('mirrored', flipBoss);
   $('boss-face').classList.toggle('mirrored', flipBoss);
   $('boss').classList.toggle('rmwhite', rmWhiteBoss);
-  $('hero').classList.toggle('mirrored', flipHero);
+  if($('hero-flipper')) $('hero-flipper').classList.toggle('mirrored', flipHero);
   $('hero-face').classList.toggle('mirrored', flipHero);
   $('boss-face').src=bossSrc; $('hero-face').src=heroSrc;
   // Champion countdown: read from champ-input-m/s (not Timer's input-h/m/s)
@@ -3129,8 +3129,8 @@ function addHeroFile(input){
   r.readAsDataURL(f);
 }
 function toggleFlip(who){
-  if(who==='boss'){ flipBoss=!flipBoss; $('boss-flip-state').textContent='State: '+(flipBoss?'on (faces right)':'off (faces left)'); $('boss').classList.toggle('mirrored', flipBoss); }
-  else { flipHero=!flipHero; $('hero-flip-state').textContent='State: '+(flipHero?'on':'off'); $('hero').classList.toggle('mirrored', flipHero); }
+  if(who==='boss'){ flipBoss=!flipBoss; $('boss-flip-state').textContent='State: '+(flipBoss?'on (faces right)':'off (faces left)'); if($('boss-flipper')) $('boss-flipper').classList.toggle('mirrored', flipBoss); }
+  else { flipHero=!flipHero; $('hero-flip-state').textContent='State: '+(flipHero?'on':'off'); if($('hero-flipper')) $('hero-flipper').classList.toggle('mirrored', flipHero); }
   rememberSetup();
   renderGallery();
 }
@@ -3140,8 +3140,8 @@ function toggleFlip(who){
   if($('hero-size')){ $('hero-size').value=heroSize; $('hero-size-val').textContent=heroSize+'%'; }
   if($('boss-flip-state')) $('boss-flip-state').textContent='State: '+(flipBoss?'on (faces right)':'off (faces left)');
   if($('hero-flip-state')) $('hero-flip-state').textContent='State: '+(flipHero?'on':'off');
-  if($('boss')) $('boss').classList.toggle('mirrored', flipBoss);
-  if($('hero')) $('hero').classList.toggle('mirrored', flipHero);
+  if($('boss-flipper')) $('boss-flipper').classList.toggle('mirrored', flipBoss);
+  if($('hero-flipper')) $('hero-flipper').classList.toggle('mirrored', flipHero);
   if($('boss-rmwhite')) $('boss-rmwhite').checked=rmWhiteBoss;
   if($('boss-fast-sec')) $('boss-fast-sec').value=localStorage.getItem('timer_fastSec')||'5';
   if($('donut-gif-url')) $('donut-gif-url').value=GIF_SET.donutUrl;
